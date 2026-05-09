@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { FilterType, FILTER_CSS } from '@/lib/config';
 import styles from './Viewfinder.module.css';
 
@@ -9,81 +8,52 @@ interface ViewfinderProps {
   isReady: boolean;
   error: string | null;
   filter: FilterType;
-  framePath: string | null;
   isCountingDown: boolean;
   countdown: number;
 }
 
 export default function Viewfinder({
-  videoRef,
-  isReady,
-  error,
-  filter,
-  framePath,
-  isCountingDown,
-  countdown,
+  videoRef, isReady, error, filter, isCountingDown, countdown,
 }: ViewfinderProps) {
   const cssFilter = FILTER_CSS[filter];
-
   return (
-    <div className={styles.viewfinderWrap}>
-      {/* Error state */}
+    <div className={styles.wrap}>
       {error && (
-        <div className={styles.errorState}>
-          <span className={styles.errorIcon}>🚫</span>
-          <p className={styles.errorTitle}>Kamera tidak bisa diakses</p>
-          <p className={styles.errorMsg}>{error}</p>
-          <p className={styles.errorHint}>
-            Pastikan browser sudah diberi izin kamera, lalu refresh halaman ini.
-          </p>
+        <div className={styles.stateOverlay}>
+          <div className={styles.stateIcon}>
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="1.5">
+              <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+              <line x1="1" y1="1" x2="23" y2="23" stroke="#D4537E"/>
+            </svg>
+          </div>
+          <p className={styles.stateTitle}>Kamera tidak dapat diakses</p>
+          <p className={styles.stateMsg}>{error}</p>
+          <p className={styles.stateHint}>Beri izin kamera di browser, lalu refresh.</p>
         </div>
       )}
-
-      {/* Loading state */}
       {!error && !isReady && (
-        <div className={styles.loadingState}>
-          <span className={styles.loadingIcon}>📷</span>
-          <p>Memuat kamera…</p>
+        <div className={styles.stateOverlay}>
+          <div className={styles.loadingSpinner} />
+          <p className={styles.stateMsg}>Memuat kamera...</p>
         </div>
       )}
 
-      {/* Live video */}
       <video
         ref={videoRef}
-        id="rg-viewfinder-video"
+        id="rg-viewfinder"
         className={styles.video}
-        style={{
-          filter: cssFilter,
-          display: isReady ? 'block' : 'none',
-        }}
-        autoPlay
-        playsInline
-        muted
+        style={{ filter: cssFilter !== 'none' ? cssFilter : undefined, display: isReady ? 'block' : 'none' }}
+        autoPlay playsInline muted
       />
 
-      {/* Frame overlay */}
-      {isReady && framePath && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={framePath}
-          alt="Frame overlay"
-          className={styles.frameOverlay}
-          draggable={false}
-        />
-      )}
-
-      {/* Countdown overlay */}
       {isCountingDown && (
         <div className={styles.countdownOverlay}>
-          <span key={countdown} className={styles.countdownNumber}>
-            {countdown}
-          </span>
+          <span key={countdown} className={styles.countdownNum}>{countdown}</span>
         </div>
       )}
 
-      {/* Filter label badge */}
       {isReady && filter !== 'Normal' && (
-        <div className={styles.filterBadge}>{filter}</div>
+        <div className={styles.filterTag}>{filter}</div>
       )}
     </div>
   );

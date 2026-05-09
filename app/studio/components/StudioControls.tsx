@@ -20,106 +20,68 @@ interface StudioControlsProps {
 }
 
 export default function StudioControls({
-  isReady,
-  isCountingDown,
-  autoShoot,
-  timer,
-  timerOptions,
-  allSlotsFilled,
-  onCapture,
-  onTimedCapture,
-  onAutoShoot,
-  onTimerChange,
-  onAutoShootToggle,
-  onReset,
+  isReady, isCountingDown, autoShoot, timer,
+  allSlotsFilled, onCapture, onTimedCapture, onAutoShoot,
   onCancelCountdown,
 }: StudioControlsProps) {
+  const disabled = !isReady || allSlotsFilled;
+
   return (
     <div className={styles.controls}>
-      {/* Main capture button */}
-      <div className={styles.captureRow}>
-        {isCountingDown ? (
-          <button
-            id="btn-cancel-countdown"
-            className={`btn-secondary ${styles.cancelBtn}`}
-            onClick={onCancelCountdown}
-          >
-            ✕ Batal
-          </button>
-        ) : (
-          <>
-            <button
-              id="btn-capture"
-              className={`btn-primary ${styles.captureBtn}`}
-              onClick={onCapture}
-              disabled={!isReady || allSlotsFilled}
-            >
-              📸 Ambil Foto
-            </button>
-
-            <button
-              id="btn-timer-capture"
-              className={`btn-secondary ${styles.timerBtn}`}
-              onClick={onTimedCapture}
-              disabled={!isReady || allSlotsFilled}
-              title={`Timer ${timer} detik`}
-            >
-              ⏱️ Timer ({timer}s)
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Timer selector + Auto Shoot row */}
-      <div className={styles.optionRow}>
-        {/* Timer options */}
-        <div className={styles.timerGroup}>
-          <span className={styles.optionLabel}>Timer:</span>
-          {timerOptions.map((t) => (
-            <button
-              key={t}
-              id={`btn-timer-${t}`}
-              className={`pill ${timer === t ? 'active' : ''}`}
-              onClick={() => onTimerChange(t as TimerOption)}
-            >
-              {t}s
-            </button>
-          ))}
-        </div>
-
-        {/* Auto shoot */}
-        <button
-          id="btn-auto-shoot"
-          className={`${styles.autoBtn} ${autoShoot ? styles.autoBtnActive : ''}`}
-          onClick={autoShoot ? onCancelCountdown : onAutoShoot}
-          disabled={!isReady}
-          title="Auto Shoot semua slot"
-        >
-          {autoShoot && isCountingDown ? '⏸ Stop Auto' : '⚡ Auto Shoot'}
+      {isCountingDown ? (
+        <button id="btn-cancel" className={styles.cancelBtn} onClick={onCancelCountdown}>
+          Batalkan
         </button>
-
-        {/* Reset */}
-        {allSlotsFilled && (
+      ) : (
+        <div className={styles.btnRow}>
           <button
-            id="btn-reset"
-            className="btn-ghost"
-            onClick={onReset}
-            style={{ fontSize: '0.85rem', fontWeight: 700 }}
+            id="btn-capture"
+            className={styles.captureBtn}
+            onClick={onCapture}
+            disabled={disabled}
           >
-            🔄 Foto Lagi
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="4"/><path d="M20 20H4a2 2 0 01-2-2V8a2 2 0 012-2h2l2-3h8l2 3h2a2 2 0 012 2v10a2 2 0 01-2 2z"/>
+            </svg>
+            Ambil Foto
           </button>
-        )}
-      </div>
 
-      {/* Status text */}
+          <button
+            id="btn-timer-capture"
+            className={styles.timerCaptureBtn}
+            onClick={onTimedCapture}
+            disabled={disabled}
+            title={`Foto dengan timer ${timer} detik`}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            {timer}s
+          </button>
+
+          <button
+            id="btn-auto-shoot"
+            className={styles.autoBtn}
+            onClick={onAutoShoot}
+            disabled={disabled}
+            title="Isi semua slot otomatis"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Auto
+          </button>
+        </div>
+      )}
+
       <p className={styles.statusText}>
         {!isReady
-          ? 'Menunggu kamera…'
+          ? 'Menunggu kamera...'
           : isCountingDown
-          ? 'Bersiap…'
+          ? 'Bersiap-siap...'
           : allSlotsFilled
-          ? '✅ Semua slot terisi! Download strip di bawah.'
-          : 'Klik "Ambil Foto" atau gunakan timer 📷'}
+          ? 'Semua slot terisi — lihat hasil di atas'
+          : 'Klik Ambil Foto atau gunakan timer'}
       </p>
     </div>
   );

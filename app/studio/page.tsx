@@ -14,95 +14,113 @@ export default function StudioPage() {
   const webcam = useWebcam();
   const booth = usePhotobooth();
 
+  const allSlotsFilled = booth.slots.every((s) => s !== null);
+  const isReviewMode = allSlotsFilled && !booth.isCountingDown;
+
   const handleCapture = () => {
     if (!webcam.videoRef.current || !webcam.isReady) return;
     booth.capturePhoto(webcam.videoRef.current);
   };
-
   const handleTimedCapture = () => {
     if (!webcam.videoRef.current || !webcam.isReady) return;
     booth.startTimedCapture(webcam.videoRef.current);
   };
-
   const handleAutoShoot = () => {
     if (!webcam.videoRef.current || !webcam.isReady) return;
     booth.startAutoShoot(webcam.videoRef.current);
   };
 
-  const allSlotsFilled = booth.slots.every((s) => s !== null);
-
   return (
     <div className={styles.studio}>
-      {/* Decorative bubbles */}
-      <div className={`rg-bubble ${styles.studioBubble1}`} />
-      <div className={`rg-bubble ${styles.studioBubble2}`} />
-
-      {/* ─── Header ─────────────────────────── */}
-      <header className={styles.studioHeader}>
-        <a href="/" className={styles.backBtn} title="Kembali ke beranda">
-          ← <span>RuangGaya</span>
+      <header className={styles.header}>
+        <a href="/" className={styles.backLink}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+          <span className={styles.backLinkText}>RuangGaya</span>
         </a>
-        <h1 className={styles.studioTitle}>📷 Studio Foto</h1>
+
+        <div className={styles.headerCenter}>
+          <div className={`${styles.modePill} ${isReviewMode ? styles.reviewMode : styles.shootMode}`}>
+            {isReviewMode ? 'Mode Edit' : 'Mode Kamera'}
+          </div>
+        </div>
+
         <div className={styles.headerRight}>
-          <span className={styles.statusBadge}>
-            {webcam.isReady ? '🟢 Kamera aktif' : webcam.error ? '🔴 Kamera error' : '⏳ Memuat kamera…'}
-          </span>
+          <div className={`${styles.camStatus} ${webcam.isReady ? styles.camOk : webcam.error ? styles.camErr : ''}`}>
+            <span className={styles.camDot} />
+            <span className={styles.camStatusText}>
+              {webcam.isReady ? 'Kamera aktif' : webcam.error ? 'Error' : 'Memuat...'}
+            </span>
+          </div>
         </div>
       </header>
 
-      {/* ─── Main Layout ─────────────────────── */}
-      <div className={styles.studioBody}>
+      {/* ── Body ── */}
+      <div className={styles.body}>
         {/* Main area */}
-        <div className={styles.mainArea}>
-          {/* Viewfinder */}
-          <Viewfinder
-            videoRef={webcam.videoRef}
-            isReady={webcam.isReady}
-            error={webcam.error}
-            filter={booth.filter}
-            framePath={booth.activeFrame.path}
-            isCountingDown={booth.isCountingDown}
-            countdown={booth.countdown}
-          />
+        <div className={styles.main}>
+          {isReviewMode ? (
+            /* ── Review/Edit Mode ── */
+            <div className={styles.reviewArea}>
+              <div className={styles.reviewHeader}>
+                <span className={styles.reviewTitle}>Semua foto siap — edit sebelum download</span>
+                {/* <button className={styles.backToShootBtn} onClick={booth.resetAll}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/></svg>
+                  Foto Ulang
+                </button> */}
+              </div>
+              <ResultPreview
+                slots={booth.slots as string[]}
+                template={booth.activeTemplate}
+                frame={booth.activeFrame}
+                stripText={booth.stripText}
+                filter={booth.filter}
+                placedStickers={booth.placedStickers}
+                onReset={booth.resetAll}
+                onRemoveSticker={booth.removeSticker}
+                onMoveSticker={booth.updateStickerPos}
+              />
+            </div>
+          ) : (
+            /* ── Shoot Mode ── */
+            <>
+              <Viewfinder
+                videoRef={webcam.videoRef}
+                isReady={webcam.isReady}
+                error={webcam.error}
+                filter={booth.filter}
+                isCountingDown={booth.isCountingDown}
+                countdown={booth.countdown}
+              />
 
-          {/* Slot Strip */}
-          <SlotStrip
-            slots={booth.slots}
-            activeSlot={booth.activeSlot}
-            cols={booth.activeTemplate.cols}
-            onSlotClick={booth.setActiveSlot}
-          />
+              <SlotStrip
+                slots={booth.slots}
+                activeSlot={booth.activeSlot}
+                cols={booth.activeTemplate.cols}
+                onSlotClick={booth.setActiveSlot}
+              />
 
-          {/* Controls */}
-          <StudioControls
-            isReady={webcam.isReady}
-            isCountingDown={booth.isCountingDown}
-            autoShoot={booth.autoShoot}
-            timer={booth.timer}
-            timerOptions={[...TIMER_OPTIONS]}
-            allSlotsFilled={allSlotsFilled}
-            onCapture={handleCapture}
-            onTimedCapture={handleTimedCapture}
-            onAutoShoot={handleAutoShoot}
-            onTimerChange={booth.setTimer}
-            onAutoShootToggle={() => booth.setAutoShoot(!booth.autoShoot)}
-            onReset={booth.resetAll}
-            onCancelCountdown={booth.cancelCountdown}
-          />
-
-          {/* Result Preview (visible when all slots filled) */}
-          {allSlotsFilled && (
-            <ResultPreview
-              slots={booth.slots as string[]}
-              template={booth.activeTemplate}
-              framePath={booth.activeFrame.path}
-              stripText={booth.stripText}
-              onReset={booth.resetAll}
-            />
+              <StudioControls
+                isReady={webcam.isReady}
+                isCountingDown={booth.isCountingDown}
+                autoShoot={booth.autoShoot}
+                timer={booth.timer}
+                timerOptions={[...TIMER_OPTIONS]}
+                allSlotsFilled={allSlotsFilled}
+                onCapture={handleCapture}
+                onTimedCapture={handleTimedCapture}
+                onAutoShoot={handleAutoShoot}
+                onTimerChange={booth.setTimer}
+                onAutoShootToggle={() => booth.setAutoShoot(!booth.autoShoot)}
+                onReset={booth.resetAll}
+                onCancelCountdown={booth.cancelCountdown}
+              />
+            </>
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar — always visible */}
         <Sidebar
           templates={[...TEMPLATES]}
           frames={[...FRAMES]}
@@ -114,12 +132,14 @@ export default function StudioPage() {
           timer={booth.timer}
           timerOptions={[...TIMER_OPTIONS]}
           autoShoot={booth.autoShoot}
+          isReviewMode={isReviewMode}
           onTemplateChange={booth.setTemplate}
           onFrameChange={booth.setFrame}
           onFilterChange={booth.setFilter}
           onStripTextChange={booth.setStripText}
           onTimerChange={booth.setTimer}
           onAutoShootToggle={() => booth.setAutoShoot(!booth.autoShoot)}
+          onAddSticker={booth.addSticker}
         />
       </div>
     </div>

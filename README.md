@@ -23,7 +23,7 @@
 
 ## ✨ Tentang RuangGaya
 
-**RuangGaya** adalah aplikasi photobooth online gratis berbasis browser — tidak perlu install, tidak perlu akun. Pilih template strip foto, tambah frame cantik, jepret momen terbaik, lalu download hasilnya langsung ke perangkat kamu!
+**RuangGaya** adalah aplikasi photobooth online gratis berbasis browser — tidak perlu install, tidak perlu akun. Pilih template strip foto, tambah frame cantik, jepret momen terbaik, lalu download hasilnya langsung ke galeri kamu!
 
 ---
 
@@ -31,15 +31,12 @@
 
 | Fitur | Deskripsi |
 |---|---|
-| 📸 **Live Webcam** | Viewfinder real-time dengan mirror horizontal |
+| 📸 **Live Webcam HD** | Resolusi tangkapan tinggi (1200x900) dengan auto-crop (object-fit cover) untuk mengatasi distorsi kamera. |
 | 🖼️ **5 Template Strip** | 2×1, 3×1, 4×1, 2×2, 2×3 — pilih sesuai selera |
-| ✨ **Frame Overlay PNG** | Frame dekoratif dengan area foto transparan |
+| ✨ **Frame & Latar Kustom** | Dukungan warna latar belakang bebas (color picker), frame gambar wallpaper, dan overlay PNG (bisa disesuaikan per layout template). |
 | 🎨 **6 Filter Foto** | Normal, B&W, Vintage, Vivid, Pastel, Warm |
-| ⏱️ **Timer Foto** | 3, 5, atau 10 detik — siap-siap dulu! |
-| ⚡ **Auto Shoot** | Isi semua slot otomatis tanpa klik berkali-kali |
-| ✏️ **Teks Strip** | Tambah nama / tanggal acara di bagian bawah strip |
-| 💾 **Download JPG** | Export photo strip kualitas tinggi langsung ke perangkat |
-| 📱 **Responsive** | Nyaman dipakai di desktop maupun mobile |
+| ⏱️ **Fitur Studio** | Timer otomatis (3/5/10 detik), auto-shoot, tambah teks pada bagian bawah strip, & dekorasi stiker geser. |
+| 💾 **Simpan & Bagikan** | Download langsung JPG resolusi tinggi, atau **unduh via QR Code** ke HP kamu! |
 
 ---
 
@@ -48,18 +45,15 @@
 - **Framework**: [Next.js 15](https://nextjs.org/) — App Router + TypeScript
 - **Styling**: Vanilla CSS Modules + Google Fonts (Nunito)
 - **Tema**: Pink pastel 🌸 — cute & playful
-- **Rendering**: Client-side only (no server, no DB)
+- **Rendering**: Client-side only (no DB)
 - **Export**: Canvas API → JPEG download
+- **Share**: Memori server temporal untuk unduhan QR Code.
 
 ---
 
 ## 🚀 Cara Menjalankan Lokal
 
 ```bash
-# Clone repo
-git clone https://github.com/USERNAME_KAMU/ruanggaya.git
-cd ruanggaya
-
 # Install dependencies
 npm install
 
@@ -73,77 +67,100 @@ Buka [http://localhost:3000](http://localhost:3000) di browser.
 
 ---
 
-## 📁 Struktur Proyek
-
-```
-ruanggaya/
-├── app/
-│   ├── page.tsx                   # Landing page
-│   ├── layout.tsx                 # Root layout + font Nunito
-│   ├── globals.css                # Design system & CSS variables
-│   └── studio/
-│       ├── page.tsx               # Studio halaman utama
-│       └── components/
-│           ├── Viewfinder.tsx     # Live webcam + frame overlay
-│           ├── Sidebar.tsx        # Template/frame/filter picker
-│           ├── SlotStrip.tsx      # Thumbnail slot foto
-│           ├── StudioControls.tsx # Tombol capture/timer/auto
-│           └── ResultPreview.tsx  # Preview & download strip
-├── hooks/
-│   ├── useWebcam.ts               # getUserMedia lifecycle
-│   └── usePhotobooth.ts           # State management photobooth
-├── lib/
-│   ├── config.ts                  # TEMPLATES, FRAMES, FILTERS
-│   └── capture.ts                 # captureFrame + buildStripCanvas
-├── public/
-│   ├── frames/                    # Frame PNG (ganti dengan asset kamu)
-│   └── templates/                 # Template preview JPG
-└── scripts/
-    └── generate-placeholders.mjs  # Generator asset placeholder
-```
-
----
-
 ## 🖼️ Menambah Frame Kustom
 
-Frame PNG dibuat di Photoshop/Figma dengan spesifikasi:
-- Area foto = **transparan** (alpha = 0)
-- Dekorasi/stiker sudah termasuk di dalam PNG
-- Ukuran disarankan: **640×480px** atau **1280×960px**
+Sistem frame RuangGaya sangat fleksibel. Ada **tiga jenis** kombinasi frame yang bisa ditambahkan melalui file konfigurasi `lib/config.ts`:
 
-**Langkah:**
-1. Taruh file di `public/frames/frame-{id}.png`
-2. Daftarkan di `lib/config.ts` → array `FRAMES`:
+### Tipe 1 — Solid Color / Warna Dasar
+Hanya menggunakan warna solid dan border. Warna ini juga bisa diubah *on-the-fly* oleh user menggunakan Color Picker di UI.
 
 ```ts
-{ id: 'myframe', name: 'Frame Buatan Saya', path: '/frames/frame-myframe.png' }
+{
+  id: 'pink',
+  name: 'Pink Soft',
+  bgColor: '#FFF0F5',
+  borderColor: '#F4C0D1',
+  bgImage: null,
+  overlayPath: null,
+}
 ```
 
----
+### Tipe 2 — Frame Latar Gambar (Wallpaper / bgImage)
+Gambar/foto dirender **di belakang** foto-foto pengguna. Cocok untuk frame bermotif kertas, langit, dll.
 
-## 🎨 CSS Variables (Design System)
-
-```css
---rg-bg:      #FFF0F5   /* Background utama */
---rg-surface: #FBEAF0   /* Surface cards */
---rg-card:    #F4C0D1   /* Border & accent ringan */
---rg-accent:  #D4537E   /* Warna aksen utama */
---rg-dark:    #993556   /* Aksen gelap */
---rg-text:    #4B1528   /* Teks utama */
---rg-muted:   #C06080   /* Teks sekunder */
+```ts
+{
+  id: 'bg-taman',
+  name: 'Taman Bunga',
+  bgColor: '#2D5A27',          // fallback jika gambar gagal load
+  borderColor: '#ffffff',
+  bgImage: '/frames/bg-taman.jpg',
+  overlayPath: null,
+}
 ```
+
+### Tipe 3 — Frame Overlay PNG Photoshop (Per-Layout)
+PNG transparan yang dibuat di Photoshop dirender **di atas foto** sebagai bingkai/dekorasi. 
+Kamu dapat menetapkan file PNG yang berbeda-beda agar desain bingkainya presisi untuk setiap layout potongan (2x1, 2x2, dst).
+
+```ts
+{
+  id: 'floral-frame',
+  name: 'Bunga Cantik',
+  bgColor: '#FFF0F5',
+  borderColor: '#D4537E',
+  bgImage: null,
+  overlayPath: {
+    '2x1': '/frames/frame-floral-2x1.png',
+    '3x1': '/frames/frame-floral-3x1.png',
+    '4x1': '/frames/frame-floral-4x1.png',
+    '2x2': '/frames/frame-floral-2x2.png',
+    '2x3': '/frames/frame-floral-2x3.png',
+    '_default': '/frames/frame-floral-2x1.png'
+  },
+}
+```
+
+> **Spesifikasi PNG:**
+> - Gunakan PNG yang mendukung transparency (alpha = 0) pada area tempat foto akan muncul.
+> - Resolusi disarankan untuk PNG menyesuaikan layout yang dihasilkan (misal 448x976 px untuk 3x1).
+> - Generate otomatis dimensi mockup dengan: `node scripts/generate-assets.mjs`
 
 ---
 
 ## 🔄 Regenerasi Placeholder Assets
 
+RuangGaya dilengkapi dengan script untuk men-generate otomatis aset-aset placeholder (stiker, frame mockup semua dimensi, dan thumbnail template):
+
 ```bash
 npm install canvas --save-dev
-node scripts/generate-placeholders.mjs
+node scripts/generate-assets.mjs
 ```
 
 ---
 
-## 📝 Lisensi
+## 📁 Struktur Proyek
 
-MIT © RuangGaya — Dibuat dengan 💖 untuk semua momen indah.
+```
+app/
+  page.tsx              # Landing page
+  layout.tsx            # Root layout + font
+  globals.css           # Design system (CSS variables)
+  api/photos/[id]/      # Endpoint share QR foto in-memory
+  share/[id]/           # UI halaman download via HP (QR)
+  studio/               # Studio utama
+hooks/
+  useWebcam.ts          # getUserMedia lifecycle HD (1280x720)
+  usePhotobooth.ts      # State management photobooth
+lib/
+  config.ts             # TEMPLATES, FRAMES, FILTERS
+  capture.ts            # Logic Canvas API & Object-fit Crop
+  photo-store.ts        # Temporal in-memory photo saver
+public/                 # Asset statis, template thumbnail, frames
+scripts/
+  generate-assets.mjs   # Script generator PNG otomatis
+```
+
+---
+
+Dibuat dengan 💖 untuk semua momen indah.

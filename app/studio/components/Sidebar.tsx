@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { Template, Frame, FilterType, TimerOption } from '@/lib/config';
 import styles from './Sidebar.module.css';
 
@@ -52,7 +51,7 @@ export default function Sidebar({
                 title={t.label}
               >
                 <div className={styles.templatePreview}>
-                  <TemplateLayoutIcon cols={t.cols} rows={Math.ceil(t.slots / t.cols)} />
+                  <TemplateLayoutIcon cols={t.cols as number} rows={Math.ceil(t.slots / (t.cols as number))} />
                 </div>
                 <span className={styles.templateLabel}>{t.label}</span>
               </button>

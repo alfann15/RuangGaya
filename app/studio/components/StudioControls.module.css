@@ -1,0 +1,105 @@
+.controls {
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.captureRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.captureBtn {
+  flex: 1;
+  justify-content: center;
+  padding: 14px 24px !important;
+  font-size: 1rem !important;
+  min-width: 160px;
+}
+
+.captureBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.timerBtn {
+  min-width: 120px;
+  justify-content: center;
+}
+
+.timerBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  flex: 1;
+  justify-content: center;
+  background: #fff0f5 !important;
+  border-color: var(--rg-dark) !important;
+  color: var(--rg-dark) !important;
+  font-size: 1rem;
+}
+
+.optionRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.timerGroup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.optionLabel {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--rg-muted);
+}
+
+.autoBtn {
+  padding: 6px 18px;
+  border-radius: 50px;
+  border: 2px solid var(--rg-card);
+  background: var(--rg-surface);
+  color: var(--rg-muted);
+  font-family: 'Nunito', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.autoBtn:hover {
+  border-color: var(--rg-accent);
+  color: var(--rg-accent);
+}
+
+.autoBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.autoBtnActive {
+  background: var(--rg-dark) !important;
+  border-color: var(--rg-dark) !important;
+  color: white !important;
+}
+
+.statusText {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--rg-muted);
+  text-align: center;
+  padding: 6px 0;
+}

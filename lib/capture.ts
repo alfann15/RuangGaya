@@ -115,16 +115,20 @@ export async function buildStripCanvas({
 
   // ── 3. Photos in slots ──────────────────────────────────────────
   const cssFilter = FILTER_CSS[filter];
+  // Pre-load all slot images in parallel to avoid sequential loading bottleneck
+  const loadedSlots = await Promise.all(
+    slots.map((src) => (src ? loadImage(src) : null))
+  );
+
   for (let i = 0; i < slots.length; i++) {
     const col = i % cols;
     const row = Math.floor(i / cols);
     const x = padding + col * (slotW + gap);
     const y = padding + row * (slotH + gap);
 
-    if (slots[i]) {
-      const img = await loadImage(slots[i]!);
+    if (loadedSlots[i]) {
       if (cssFilter !== 'none') ctx.filter = cssFilter;
-      ctx.drawImage(img, x, y, slotW, slotH);
+      ctx.drawImage(loadedSlots[i]!, x, y, slotW, slotH);
       ctx.filter = 'none';
     } else {
       ctx.fillStyle = 'rgba(0,0,0,0.08)';
@@ -135,9 +139,24 @@ export async function buildStripCanvas({
   // ── 4. Stickers ─────────────────────────────────────────────────
   if (options.stickers && options.stickers.length > 0 && options.domWidth) {
     const scale = totalW / options.domWidth;
-    for (const sticker of options.stickers) {
+    
+    // Pre-load all stickers in parallel
+    const loadedStickers = await Promise.all(
+      options.stickers.map(async (sticker) => {
+        try {
+          const img = await loadImage(sticker.src);
+          return { sticker, img };
+        } catch (err) {
+          console.error('Failed to load sticker:', err);
+          return null;
+        }
+      })
+    );
+
+    for (const item of loadedStickers) {
+      if (!item) continue;
+      const { sticker, img } = item;
       try {
-        const img = await loadImage(sticker.src);
         ctx.save();
         
         // Parse the transform string (e.g., "translate(100px, 100px) rotate(45deg)")

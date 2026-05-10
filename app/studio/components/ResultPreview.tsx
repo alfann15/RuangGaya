@@ -63,7 +63,7 @@ export default function ResultPreview({
   }, [slots, template, frame, stripText, stripTextColor, filter, stickers]);
 
   // Invalidate cache when dependencies change
-  useEffect(() => { canvasRef.current = null; }, [slots, template, frame, stripText, stripTextColor, filter]);
+  useEffect(() => { canvasRef.current = null; }, [slots, template, frame, stripText, stripTextColor, filter, stickers]);
 
   /** Direct download */
   const handleDownload = useCallback(async () => {

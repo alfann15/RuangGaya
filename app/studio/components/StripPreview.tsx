@@ -1,8 +1,9 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
-import { Template, FilterType, FILTER_CSS, Frame, getOverlayPath } from '@/lib/config';
-import { PlacedSticker, STICKERS } from '@/lib/stickers';
+import { useRef } from 'react';
+
+import { Template, FilterType, FILTER_CSS, Frame, StickerItem } from '@/lib/config';
+import StickerLayer from './StickerLayer';
 import styles from './StripPreview.module.css';
 
 interface StripPreviewProps {
@@ -10,10 +11,11 @@ interface StripPreviewProps {
   template: Template;
   frame: Frame;
   filter: FilterType;
-  placedStickers: PlacedSticker[];
   stripText?: string;
-  onRemoveSticker: (uid: string) => void;
-  onMoveSicker: (uid: string, x: number, y: number) => void;
+  stripTextColor?: string;
+  stickers?: StickerItem[];
+  updateSticker?: (id: string, updates: Partial<StickerItem>) => void;
+  removeSticker?: (id: string) => void;
 }
 
 export default function StripPreview({
@@ -21,75 +23,71 @@ export default function StripPreview({
   template,
   frame,
   filter,
-  placedStickers,
   stripText,
-  onRemoveSticker,
-  onMoveSicker,
+  stripTextColor = '#000000',
+  stickers,
+  updateSticker,
+  removeSticker,
 }: StripPreviewProps) {
-  // Resolve the overlay PNG path for the current template
-  const resolvedOverlay = getOverlayPath(frame.overlayPath, template.id);
   const containerRef = useRef<HTMLDivElement>(null);
-  const draggingRef = useRef<{ uid: string } | null>(null);
 
   const cssFilter = FILTER_CSS[filter];
 
-  const handleStickerPointerDown = useCallback(
-    (e: React.PointerEvent, uid: string) => {
-      e.preventDefault();
-      (e.target as HTMLElement).setPointerCapture(e.pointerId);
-      draggingRef.current = { uid };
-    },
-    []
-  );
+  // Default text color
+  const computedStripTextColor = stripTextColor;
 
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!draggingRef.current || !containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
-      const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
-      onMoveSicker(draggingRef.current.uid, x, y);
-    },
-    [onMoveSicker]
-  );
-
-  const handlePointerUp = useCallback(() => {
-    draggingRef.current = null;
-  }, []);
-
-  // Auto-detect text color for labels based on bg brightness
+  // Auto-detect empty cell colors
   const isDark = isColorDark(frame.bgColor);
   const emptyCellColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.3)';
-  const stripTextColor = isDark ? '#ffffff' : frame.borderColor;
+
+  const slotW = 400;
+  const slotH = 300;
+  const gap = 14;
+  const padding = 24; // Reduced from 40
+  const cols = template.cols;
+  const rows = Math.ceil(template.slots / cols);
+  
+  const photoAreaW = padding * 2 + cols * slotW + (cols - 1) * gap;
+  const photoAreaH = padding * 2 + rows * slotH + (rows - 1) * gap;
+  const footerH = stripText && stripText.trim() ? 56 : 0;
+  const totalW = photoAreaW;
+  const totalH = photoAreaH + footerH;
+
+  // Calculate padding and gap as percentages of container width
+  const padPct = (padding / photoAreaW) * 100;
+  const gapPct = (gap / photoAreaW) * 100;
 
   return (
     <div
       ref={containerRef}
       className={styles.previewContainer}
-      style={
-        frame.bgImage
+      style={{
+        aspectRatio: `${totalW} / ${totalH}`,
+        ...(frame.bgImage
           ? {
               backgroundImage: `url(${frame.bgImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }
-          : { background: frame.bgColor }
-      }
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
+          : { background: frame.bgColor })
+      }}
       id="strip-preview-area"
     >
+      <div className={styles.contentArea}>
       {/* 1. Photo grid */}
       <div
         className={styles.photoGrid}
-        style={{ gridTemplateColumns: `repeat(${template.cols}, 1fr)` }}
+        style={{ 
+          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          padding: `${padPct}%`,
+          gap: `${gapPct}%`,
+        }}
       >
         {slots.map((src, i) =>
           src ? (
             <div
               key={i}
               className={styles.photoCell}
-              style={{ borderColor: frame.borderColor }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -103,7 +101,7 @@ export default function StripPreview({
             <div
               key={i}
               className={styles.emptyCell}
-              style={{ borderColor: frame.borderColor, color: emptyCellColor }}
+              style={{ borderColor: emptyCellColor, color: emptyCellColor }}
             >
               <span className={styles.emptyCellNum}>{i + 1}</span>
             </div>
@@ -111,63 +109,46 @@ export default function StripPreview({
         )}
       </div>
 
-      {/* 2. Frame overlay PNG — rendered ON TOP of photos, different per template */}
-      {resolvedOverlay && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={resolvedOverlay}
-          alt=""
-          className={styles.frameOverlay}
-          draggable={false}
-          aria-hidden
-        />
-      )}
-
-      {/* 3. Stickers — draggable */}
-      {placedStickers.map((ps) => {
-        const def = STICKERS.find((s) => s.id === ps.stickerId);
-        if (!def) return null;
-        return (
-          <div
-            key={ps.uid}
-            className={styles.stickerEl}
-            style={{
-              left: `${ps.x}%`,
-              top: `${ps.y}%`,
-              transform: `translate(-50%, -50%) rotate(${ps.rotation}deg) scale(${ps.scale})`,
-            }}
-            onPointerDown={(e) => handleStickerPointerDown(e, ps.uid)}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={def.path}
-              alt={def.label}
-              className={styles.stickerImg}
-              draggable={false}
-              style={{
-                filter: ps.hueRotate && ps.hueRotate > 0
-                  ? `brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(500%) hue-rotate(${ps.hueRotate}deg)`
-                  : 'none',
-              }}
-            />
-            <button
-              className={styles.stickerRemove}
-              onClick={(e) => { e.stopPropagation(); onRemoveSticker(ps.uid); }}
-              aria-label="Hapus stiker"
-            >
-              ×
-            </button>
+      {/* 2. Stickers */}
+      {stickers && updateSticker && removeSticker && (
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', overflow: 'hidden' }}>
+          <div style={{ position: 'relative', width: '100%', height: '100%', pointerEvents: 'auto' }}>
+             <StickerLayer stickers={stickers} updateSticker={updateSticker} removeSticker={removeSticker} />
           </div>
-        );
-      })}
+        </div>
+      )}
+      </div>
 
       {/* 4. Strip Text Footer */}
       {stripText && stripText.trim() && (
         <div 
           className={styles.stripTextFooter}
-          style={{ color: stripTextColor }}
+          style={{ 
+            position: 'absolute',
+            top: `${(photoAreaH / totalH) * 100}%`,
+            left: 0,
+            width: '100%',
+            height: `${(footerH / totalH) * 100}%`,
+            padding: 0,
+            margin: 0,
+            boxSizing: 'border-box',
+            pointerEvents: 'none'
+          }}
         >
-          {stripText}
+          <div style={{
+            position: 'absolute',
+            top: `${( (footerH / 2 - 6) / footerH ) * 100}%`,
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            color: computedStripTextColor,
+            fontFamily: '"Nunito", sans-serif',
+            fontWeight: 'bold',
+            fontSize: `${(22 / totalW) * 100}cqi`,
+            whiteSpace: 'nowrap',
+            lineHeight: 1
+          }}>
+            {stripText}
+          </div>
         </div>
       )}
     </div>

@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'RuangGaya — Photobooth Online Cute & Playful 🎀',
+  title: 'RuangGaya',
   description:
     'Aplikasi photobooth online dengan frame cantik, filter foto, dan strip foto yang bisa langsung didownload. Foto bareng, kenangan abadi!',
   keywords: ['photobooth', 'foto online', 'frame foto', 'ruanggaya', 'photo strip'],
   openGraph: {
-    title: 'RuangGaya Photobooth 🎀',
+    title: 'RuangGaya',
     description: 'Foto bareng, kenangan abadi!',
     type: 'website',
   },

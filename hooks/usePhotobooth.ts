@@ -3,16 +3,16 @@
 import { useState, useCallback, useRef } from 'react';
 import {
   TEMPLATES, FRAMES, FILTERS, TIMER_OPTIONS,
-  Template, Frame, FilterType, TimerOption,
+  Template, Frame, FilterType, TimerOption, StickerItem,
 } from '@/lib/config';
 import { captureRawFrame } from '@/lib/capture';
-import { PlacedSticker, STICKERS } from '@/lib/stickers';
 
 interface PhotoboothState {
   activeTemplate: Template;
   activeFrame: Frame;
   filter: FilterType;
   stripText: string;
+  stripTextColor: string;
   slots: (string | null)[];       // raw (unfiltered) captures
   activeSlot: number;
   timer: TimerOption;
@@ -20,7 +20,7 @@ interface PhotoboothState {
   isCountingDown: boolean;
   countdown: number;
   isComplete: boolean;
-  placedStickers: PlacedSticker[];
+  stickers: StickerItem[];
 }
 
 interface PhotoboothActions {
@@ -28,6 +28,7 @@ interface PhotoboothActions {
   setFrame: (f: Frame) => void;
   setFilter: (f: FilterType) => void;
   setStripText: (s: string) => void;
+  setStripTextColor: (c: string) => void;
   setActiveSlot: (i: number) => void;
   setTimer: (t: TimerOption) => void;
   setAutoShoot: (v: boolean) => void;
@@ -36,9 +37,10 @@ interface PhotoboothActions {
   startAutoShoot: (video: HTMLVideoElement) => void;
   resetAll: () => void;
   cancelCountdown: () => void;
-  addSticker: (stickerId: string, hueRotate: number) => void;
-  removeSticker: (uid: string) => void;
-  updateStickerPos: (uid: string, x: number, y: number) => void;
+  addSticker: (src: string) => void;
+  updateSticker: (id: string, updates: Partial<StickerItem>) => void;
+  removeSticker: (id: string) => void;
+  clearStickers: () => void;
 }
 
 export function usePhotobooth(): PhotoboothState & PhotoboothActions {
@@ -47,6 +49,7 @@ export function usePhotobooth(): PhotoboothState & PhotoboothActions {
   const [activeFrame, setActiveFrame] = useState<Frame>(FRAMES[0]);
   const [filter, setFilter] = useState<FilterType>('Normal');
   const [stripText, setStripText] = useState('');
+  const [stripTextColor, setStripTextColor] = useState('#000000');
   const [slots, setSlots] = useState<(string | null)[]>(Array(defaultTemplate.slots).fill(null));
   const [activeSlot, setActiveSlotState] = useState(0);
   const [timer, setTimer] = useState<TimerOption>(3);
@@ -54,7 +57,7 @@ export function usePhotobooth(): PhotoboothState & PhotoboothActions {
   const [isCountingDown, setIsCountingDown] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
-  const [placedStickers, setPlacedStickers] = useState<PlacedSticker[]>([]);
+  const [stickers, setStickers] = useState<StickerItem[]>([]);
 
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoShootRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -71,7 +74,6 @@ export function usePhotobooth(): PhotoboothState & PhotoboothActions {
     setSlots(Array(t.slots).fill(null));
     setActiveSlotState(0);
     setIsComplete(false);
-    setPlacedStickers([]);
   }, []);
 
   const setFrame = useCallback((f: Frame) => setActiveFrame(f), []);
@@ -164,42 +166,41 @@ export function usePhotobooth(): PhotoboothState & PhotoboothActions {
     setSlots(Array(activeTemplate.slots).fill(null));
     setActiveSlotState(0);
     setIsComplete(false);
-    setPlacedStickers([]);
+    setStickers([]); // clear stickers on retake
   }, [activeTemplate, cancelCountdown]);
 
-  // Sticker actions
-  const addSticker = useCallback((stickerId: string, hueRotate: number) => {
-    const uid = `${stickerId}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    setPlacedStickers((prev) => [
+  const addSticker = useCallback((src: string) => {
+    setStickers((prev) => [
       ...prev,
       {
-        uid,
-        stickerId,
-        x: 20 + Math.random() * 60,
-        y: 10 + Math.random() * 80,
-        scale: 1,
-        rotation: (Math.random() - 0.5) * 30,
-        hueRotate,
+        id: `sticker-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        src,
+        width: 150, // Default size
+        height: 150,
+        transform: `translate(100px, 100px) rotate(0deg)`,
       },
     ]);
   }, []);
 
-  const removeSticker = useCallback((uid: string) => {
-    setPlacedStickers((prev) => prev.filter((s) => s.uid !== uid));
-  }, []);
-
-  const updateStickerPos = useCallback((uid: string, x: number, y: number) => {
-    setPlacedStickers((prev) =>
-      prev.map((s) => (s.uid === uid ? { ...s, x, y } : s))
+  const updateSticker = useCallback((id: string, updates: Partial<StickerItem>) => {
+    setStickers((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
     );
   }, []);
 
+  const removeSticker = useCallback((id: string) => {
+    setStickers((prev) => prev.filter((s) => s.id !== id));
+  }, []);
+
+  const clearStickers = useCallback(() => setStickers([]), []);
+
   return {
-    activeTemplate, activeFrame, filter, stripText, slots, activeSlot,
-    timer, autoShoot, isCountingDown, countdown, isComplete, placedStickers,
+    activeTemplate, activeFrame, filter, stripText, stripTextColor, slots, activeSlot,
+    timer, autoShoot, isCountingDown, countdown, isComplete,
+    stickers,
     setTemplate, setFrame, setFilter: (f: FilterType) => setFilter(f),
-    setStripText, setActiveSlot, setTimer, setAutoShoot,
+    setStripText, setStripTextColor, setActiveSlot, setTimer, setAutoShoot,
     capturePhoto, startTimedCapture, startAutoShoot, resetAll, cancelCountdown,
-    addSticker, removeSticker, updateStickerPos,
+    addSticker, updateSticker, removeSticker, clearStickers,
   };
 }

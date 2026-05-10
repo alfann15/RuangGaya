@@ -1,7 +1,7 @@
 {
   "name": "ruanggaya",
-  "version": "1.0.0",
-  "description": "RuangGaya — Aplikasi web photobooth cute & playful 🎀",
+  "version": "1.5.1",
+  "description": "RuangGaya — Aplikasi web photobooth",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -15,7 +15,8 @@
     "next": "^15.3.2",
     "qrcode": "^1.5.4",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-moveable": "^0.56.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.18",

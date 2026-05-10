@@ -1,5 +1,4 @@
-import { FilterType, FILTER_CSS, Frame, TemplateId, getOverlayPath } from './config';
-import { PlacedSticker, STICKERS } from './stickers';
+import { FilterType, FILTER_CSS, Frame, TemplateId } from './config';
 
 /**
  * Capture raw frame (no filter) — mirrored horizontally.
@@ -51,8 +50,10 @@ interface BuildStripOptions {
   gap?: number;
   padding?: number;
   stripText?: string;
+  stripTextColor?: string;
   filter?: FilterType;
-  placedStickers?: PlacedSticker[];
+  stickers?: import('./config').StickerItem[];
+  domWidth?: number;
 }
 
 /**
@@ -60,10 +61,7 @@ interface BuildStripOptions {
  * Layer order (bottom → top):
  *   1. Frame background color (always painted first as fallback)
  *   2. Background image (bgImage), if set — covers full strip area
- *   3. Photos in grid with optional CSS filter
- *   4. Overlay PNG (overlayPath), if set — covers photos area, transparent cutouts show through
- *   5. Stickers (draggable decorations)
- *   6. Strip text footer
+ *   3. Strip text footer
  */
 export async function buildStripCanvas({
   slots,
@@ -73,10 +71,11 @@ export async function buildStripCanvas({
   slotW = 400,
   slotH = 300,
   gap = 14,
-  padding = 24,
+  padding = 24, // Reduced from 40 to make the frame thinner
   stripText = '',
+  stripTextColor = '#000000',
   filter = 'Normal',
-  placedStickers = [],
+  ...options
 }: BuildStripOptions): Promise<HTMLCanvasElement> {
   const rows = Math.ceil(slots.length / cols);
   const footerH = stripText.trim() ? 56 : 0;
@@ -122,10 +121,6 @@ export async function buildStripCanvas({
     const x = padding + col * (slotW + gap);
     const y = padding + row * (slotH + gap);
 
-    // Slot border (thin outline around each photo)
-    ctx.fillStyle = frame.borderColor;
-    ctx.fillRect(x - 2, y - 2, slotW + 4, slotH + 4);
-
     if (slots[i]) {
       const img = await loadImage(slots[i]!);
       if (cssFilter !== 'none') ctx.filter = cssFilter;
@@ -137,48 +132,51 @@ export async function buildStripCanvas({
     }
   }
 
-  // ── 4. Overlay PNG (Photoshop transparent overlay on top of photos)
-  const resolvedOverlay = getOverlayPath(frame.overlayPath, templateId);
-  if (resolvedOverlay) {
-    try {
-      const overlayImg = await loadImage(resolvedOverlay);
-      // Render overlay to fill exactly the photo area (not the footer)
-      ctx.drawImage(overlayImg, 0, 0, totalW, photoAreaH);
-    } catch {
-      // overlay load failed — skip silently
+  // ── 4. Stickers ─────────────────────────────────────────────────
+  if (options.stickers && options.stickers.length > 0 && options.domWidth) {
+    const scale = totalW / options.domWidth;
+    for (const sticker of options.stickers) {
+      try {
+        const img = await loadImage(sticker.src);
+        ctx.save();
+        
+        // Parse the transform string (e.g., "translate(100px, 100px) rotate(45deg)")
+        // Since DOMMatrix is not available in Node.js, and this runs in the browser,
+        // we can safely use DOMMatrix.
+        const matrix = new DOMMatrix(sticker.transform);
+        
+        // Apply the same matrix but scaled up
+        // transform matrix: a c e
+        //                   b d f
+        // e = tx, f = ty
+        ctx.translate(matrix.e * scale, matrix.f * scale);
+        
+        // Extract rotation and scaling from the matrix
+        const angle = Math.atan2(matrix.b, matrix.a);
+        const scaleX = Math.sqrt(matrix.a * matrix.a + matrix.b * matrix.b);
+        const scaleY = Math.sqrt(matrix.c * matrix.c + matrix.d * matrix.d);
+        
+        ctx.rotate(angle);
+        ctx.scale(scaleX, scaleY);
+        
+        // The sticker width/height is also scaled
+        ctx.drawImage(img, 0, 0, sticker.width * scale, sticker.height * scale);
+        ctx.restore();
+      } catch (err) {
+        console.error('Failed to render sticker:', err);
+      }
     }
   }
 
-  // ── 5. Stickers ─────────────────────────────────────────────────
-  for (const ps of placedStickers) {
-    const def = STICKERS.find((s) => s.id === ps.stickerId);
-    if (!def) continue;
-    const stickerSize = Math.min(totalW, photoAreaH) * 0.15 * ps.scale;
-    const px = (ps.x / 100) * totalW;
-    const py = (ps.y / 100) * photoAreaH;
-    try {
-      const sImg = await loadImage(def.path);
-      ctx.save();
-      ctx.translate(px, py);
-      ctx.rotate((ps.rotation * Math.PI) / 180);
-      if (ps.hueRotate && ps.hueRotate > 0) {
-        ctx.filter = `brightness(0) saturate(100%) invert(50%) sepia(100%) saturate(500%) hue-rotate(${ps.hueRotate}deg)`;
-      }
-      ctx.drawImage(sImg, -stickerSize / 2, -stickerSize / 2, stickerSize, stickerSize);
-      ctx.filter = 'none';
-      ctx.restore();
-    } catch { /* skip sticker */ }
-  }
-
-  // ── 6. Strip text footer ────────────────────────────────────────
+  // ── 5. Strip text footer ────────────────────────────────────────
   if (stripText.trim()) {
     const fy = photoAreaH;
-    const isDark = isColorDark(frame.bgColor);
-    ctx.fillStyle = isDark ? '#ffffff' : frame.borderColor;
+    ctx.fillStyle = stripTextColor;
     ctx.font = `bold 22px "Nunito", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(stripText, totalW / 2, fy + footerH / 2);
+    // Shift up slightly (-6px) so it doesn't look too low
+    ctx.fillText(stripText, totalW / 2, fy + footerH / 2 - 6);
   }
 
   return canvas;

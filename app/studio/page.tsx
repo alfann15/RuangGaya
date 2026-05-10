@@ -75,11 +75,12 @@ export default function StudioPage() {
                 template={booth.activeTemplate}
                 frame={booth.activeFrame}
                 stripText={booth.stripText}
+                stripTextColor={booth.stripTextColor}
                 filter={booth.filter}
-                placedStickers={booth.placedStickers}
+                stickers={booth.stickers}
+                updateSticker={booth.updateSticker}
+                removeSticker={booth.removeSticker}
                 onReset={booth.resetAll}
-                onRemoveSticker={booth.removeSticker}
-                onMoveSticker={booth.updateStickerPos}
               />
             </div>
           ) : (
@@ -129,6 +130,7 @@ export default function StudioPage() {
           activeFrame={booth.activeFrame}
           activeFilter={booth.filter}
           stripText={booth.stripText}
+          stripTextColor={booth.stripTextColor}
           timer={booth.timer}
           timerOptions={[...TIMER_OPTIONS]}
           autoShoot={booth.autoShoot}
@@ -137,9 +139,10 @@ export default function StudioPage() {
           onFrameChange={booth.setFrame}
           onFilterChange={booth.setFilter}
           onStripTextChange={booth.setStripText}
+          onStripTextColorChange={booth.setStripTextColor}
           onTimerChange={booth.setTimer}
           onAutoShootToggle={() => booth.setAutoShoot(!booth.autoShoot)}
-          onAddSticker={booth.addSticker}
+          addSticker={booth.addSticker}
         />
       </div>
     </div>

@@ -61,10 +61,25 @@
 }
 
 @keyframes popIn {
-  0%   { transform: scale(1.5); opacity: 0; }
-  15%  { transform: scale(1); opacity: 1; }
-  80%  { transform: scale(1); opacity: 1; }
-  100% { transform: scale(0.8); opacity: 0; }
+  0% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+
+  15% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  80% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
 }
 
 /* Filter tag */
@@ -93,8 +108,11 @@
   animation: spin 0.8s linear infinite;
   margin-bottom: 12px;
 }
+
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* State overlays */
@@ -111,22 +129,25 @@
   text-align: center;
 }
 
-.stateIcon { margin-bottom: 4px; opacity: 0.8; }
+.stateIcon {
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
 
 .stateTitle {
   font-weight: 800;
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.95rem;
 }
 
 .stateMsg {
   font-size: 0.8rem;
-  color: rgba(255,255,255,0.65);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .stateHint {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.45);
+  color: rgba(255, 255, 255, 0.45);
   margin-top: 4px;
   line-height: 1.5;
 }

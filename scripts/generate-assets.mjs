@@ -11,35 +11,12 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, '..');
 
-fs.mkdirSync(path.join(root, 'public/stickers'), { recursive: true });
-fs.mkdirSync(path.join(root, 'public/frames'), { recursive: true });
+
+fs.mkdirSync(path.join(root, 'public/overlays'), { recursive: true });
 fs.mkdirSync(path.join(root, 'public/templates'), { recursive: true });
 
-// ─── Sticker placeholders ────────────────────────────────────────
-const stickerEmojis = [
-  '❤️','⭐','👑','🌸','✨','🎀','🌈','☁️',
-  '🦋','🍓','🎂','💎','🌙','🎵','🦄','💐'
-];
-
-for (let i = 1; i <= 16; i++) {
-  const size = 200;
-  const canvas = createCanvas(size, size);
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, size, size);
-
-  // Draw emoji as text
-  ctx.font = `${size * 0.7}px serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(stickerEmojis[i - 1] || '⭐', size / 2, size / 2 + 10);
-
-  const out = path.join(root, `public/stickers/sticker-${String(i).padStart(2, '0')}.png`);
-  fs.writeFileSync(out, canvas.toBuffer('image/png'));
-  console.log('✅ Sticker:', out);
-}
-
-// ─── Frame placeholders (lebih bagus) ────────────────────────────
-function makeFrame(id, colorBorder, colorCorner, style, W, H) {
+// ─── Overlay placeholders (lebih bagus) ────────────────────────────
+function makeOverlay(id, colorBorder, colorCorner, style, W, H) {
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, W, H);
@@ -122,7 +99,7 @@ function makeFrame(id, colorBorder, colorCorner, style, W, H) {
   return canvas.toBuffer('image/png');
 }
 
-const frames = [
+const overlays = [
   { id: 'floral',  colorBorder: '#D4537E', colorCorner: '#ED93B1', style: 'floral' },
   { id: 'kawaii',  colorBorder: '#ED93B1', colorCorner: '#F4C0D1', style: 'corner' },
   { id: 'simple',  colorBorder: '#993556', colorCorner: '#D4537E', style: 'full-border' },
@@ -130,19 +107,19 @@ const frames = [
 ];
 
 const templatesSizes = [
-  { id: '2x1', W: 448, H: 662 },
-  { id: '3x1', W: 448, H: 976 },
-  { id: '4x1', W: 448, H: 1290 },
-  { id: '2x2', W: 862, H: 662 },
-  { id: '2x3', W: 862, H: 976 },
+  { id: '2x1', W: 480, H: 694 },
+  { id: '3x1', W: 480, H: 1008 },
+  { id: '4x1', W: 480, H: 1322 },
+  { id: '2x2', W: 894, H: 694 },
+  { id: '2x3', W: 894, H: 1008 },
 ];
 
-for (const f of frames) {
+for (const f of overlays) {
   for (const t of templatesSizes) {
-    const buf = makeFrame(f.id, f.colorBorder, f.colorCorner, f.style, t.W, t.H);
-    const out = path.join(root, `public/frames/frame-${f.id}-${t.id}.png`);
+    const buf = makeOverlay(f.id, f.colorBorder, f.colorCorner, f.style, t.W, t.H);
+    const out = path.join(root, `public/overlays/overlay-${f.id}-${t.id}.png`);
     fs.writeFileSync(out, buf);
-    console.log(`✅ Frame: ${f.id} (${t.id}) -> ${out}`);
+    console.log(`✅ Overlay: ${f.id} (${t.id}) -> ${out}`);
   }
 }
 
@@ -188,5 +165,4 @@ for (const t of templates) {
 
 console.log('\n🎀 Semua placeholder asset berhasil dibuat!');
 console.log('\n📌 Untuk pakai asset Photoshop kamu:');
-console.log('   Stiker  → ganti file di public/stickers/sticker-01.png s.d. sticker-16.png');
-console.log('   Frame   → ganti file di public/frames/frame-{id}.png');
+console.log('   Overlay/Dekorasi → ganti file di public/overlays/overlay-{id}.png');

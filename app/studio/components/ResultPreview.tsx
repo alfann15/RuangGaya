@@ -2,8 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
-import { Template, FilterType, Frame } from '@/lib/config';
-import { PlacedSticker } from '@/lib/stickers';
+import { Template, FilterType, Frame, StickerItem } from '@/lib/config';
 import { buildStripCanvas } from '@/lib/capture';
 import StripPreview from './StripPreview';
 import styles from './ResultPreview.module.css';
@@ -13,11 +12,12 @@ interface ResultPreviewProps {
   template: Template;
   frame: Frame;
   stripText: string;
+  stripTextColor: string;
   filter: FilterType;
-  placedStickers: PlacedSticker[];
+  stickers: StickerItem[];
+  updateSticker: (id: string, updates: Partial<StickerItem>) => void;
+  removeSticker: (id: string) => void;
   onReset: () => void;
-  onRemoveSticker: (uid: string) => void;
-  onMoveSticker: (uid: string, x: number, y: number) => void;
 }
 
 export default function ResultPreview({
@@ -25,11 +25,12 @@ export default function ResultPreview({
   template,
   frame,
   stripText,
+  stripTextColor,
   filter,
-  placedStickers,
+  stickers,
+  updateSticker,
+  removeSticker,
   onReset,
-  onRemoveSticker,
-  onMoveSticker,
 }: ResultPreviewProps) {
   const [isBuilding, setIsBuilding] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
@@ -41,21 +42,28 @@ export default function ResultPreview({
   /** Build the strip canvas once and cache it */
   const getCanvas = useCallback(async () => {
     if (canvasRef.current) return canvasRef.current;
+    
+    // Get the current DOM width of the preview area to scale stickers correctly
+    const previewEl = document.getElementById('strip-preview-area');
+    const domWidth = previewEl ? previewEl.clientWidth : undefined;
+
     const canvas = await buildStripCanvas({
       slots,
       cols: template.cols,
       templateId: template.id,
       frame,
       stripText,
+      stripTextColor,
       filter,
-      placedStickers,
+      stickers,
+      domWidth,
     });
     canvasRef.current = canvas;
     return canvas;
-  }, [slots, template, frame, stripText, filter, placedStickers]);
+  }, [slots, template, frame, stripText, stripTextColor, filter, stickers]);
 
   // Invalidate cache when dependencies change
-  useEffect(() => { canvasRef.current = null; }, [slots, template, frame, stripText, filter, placedStickers]);
+  useEffect(() => { canvasRef.current = null; }, [slots, template, frame, stripText, stripTextColor, filter]);
 
   /** Direct download */
   const handleDownload = useCallback(async () => {
@@ -119,10 +127,11 @@ export default function ResultPreview({
           template={template}
           frame={frame}
           filter={filter}
-          placedStickers={placedStickers}
           stripText={stripText}
-          onRemoveSticker={onRemoveSticker}
-          onMoveSicker={onMoveSticker}
+          stripTextColor={stripTextColor}
+          stickers={stickers}
+          updateSticker={updateSticker}
+          removeSticker={removeSticker}
         />
       </div>
 
